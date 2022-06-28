@@ -2,7 +2,7 @@
 
 modern object-oriented programming languages 2
 
-Here is some C# code that I needed to prepare during my IT studies at Univeristy of Silesia.
+Here is some C# code that I needed to prepare during my third year of IT studies at Univeristy of Silesia.
 Below description to every exercise.
 Every exercise is being separated with 169 long spam of "/"
 
