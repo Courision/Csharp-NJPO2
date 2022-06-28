@@ -1,0 +1,1007 @@
+*1
+
+ public abstract class Trojkat{
+    protected double a,b,c; 
+    public double obwod,pole;
+
+    public double Pole(double a, double b, double c){
+        double p = Obwod(a,b,c)/2;
+        return Math.Round(Math.Sqrt(p*(p - a)*(p - b)*(p - c)), 2);
+    }
+
+    public double Obwod(double a, double b, double c){
+        return a+b+c;
+    }
+
+    public override String ToString(){
+        return ($"Pole: " + pole + "\nObwod: " + obwod);
+    }
+}
+
+public class Rownoboczny : Trojkat{
+    public Rownoboczny(double a){
+        this.a = a;
+        this.obwod = Obwod(a,a,a);
+        this.pole = Pole(a,a,a);
+    }
+}
+
+public class Rownoramienny : Trojkat{
+    public Rownoramienny(double a, double b){
+        this.a = a;
+        this.b = b;
+        this.obwod = Obwod(a,a,b);
+        this.pole = Pole(a,a,b);
+    }
+}
+
+public class Prostokatny : Trojkat{
+    public Prostokatny(double a, double b){
+        this.a = a;
+        this.b = b;
+        this.c = Math.Sqrt(a*a + b*b);
+        this.obwod = Obwod(a,b,c);
+        this.pole = Pole(a,b,c);
+    }
+}
+
+var rownoboczny = new Rownoboczny(5.0);
+Console.WriteLine(rownoboczny);
+
+var rownoramienny = new Rownoramienny(6.0, 2.0);
+Console.WriteLine(rownoramienny);
+
+var prostokatny = new Prostokatny(3.0 ,4.0);
+Console.WriteLine(prostokatny);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*2
+
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+public class Pracownik
+    {
+        public String imie {get; set;}
+        public String nazwisko {get; set;}
+        public int wiek {get; set;}
+        public String stanowisko {get; set;}
+        public String plec {get; set;}
+        
+        public string Show()
+        {
+            return string.Format("| {0,-15}| {1,-15}| {2,-4}| {3,-15}| {4,-2}|",
+            imie, nazwisko, wiek, stanowisko, plec);
+        }
+        public bool IsMatch(Pracownik pracownik)
+        {
+            if( imie == pracownik.imie && 
+                nazwisko == pracownik.nazwisko &&
+                wiek == pracownik.wiek &&
+                stanowisko == pracownik.stanowisko &&
+                plec == pracownik.plec) return true;
+                else return false;
+        }
+    }
+
+public interface IBuilder
+{
+    bool Save(List<Pracownik> baza);
+    List<Pracownik> Read(String fileName);
+}
+
+public class JSONBuilder : IBuilder
+{
+
+    public bool Save(List<Pracownik> baza)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(baza);
+            File.WriteAllText("Kartoteka.json", json);
+        }
+        catch (Exception e)
+        {
+             Console.WriteLine("\nZapisywanie się nie powiodło:");
+        }
+
+        Console.WriteLine("\nZapisano do pliku \"Kartoteka.json\"");
+        return true;
+    }
+
+    public List<Pracownik> Read(String fileName)
+    {
+        String jsonString = "";
+        try
+        {
+            jsonString = File.ReadAllText(fileName);
+        }
+        catch (Exception e)
+        {
+             Console.WriteLine("\nWczytywanie się nie powiodło:");
+        }
+
+        Console.WriteLine("\nWczytano");
+        return JsonSerializer.Deserialize<List<Pracownik>>(jsonString);
+    }
+}
+
+public class Kartoteka<T> where T : Pracownik
+    {
+        List<T> baza = new List<T>();
+        
+
+        public void Dodaj(T pracownik)
+        {
+            if (Validate(pracownik)) baza.Add(pracownik);
+        }
+
+        public void Usun(T pracownik)
+        {
+            baza.Remove(pracownik);
+        }
+
+        public void Szukaj(String pytanie)
+        {
+            Console.WriteLine("\nKrotki zawierajace \"{0}\":", pytanie.ToLower());
+            foreach(T a in baza)
+            {
+                if (a.Show().ToLower().Contains(pytanie.ToLower()))
+                {
+                    Console.WriteLine(a.Show());
+                }
+            }
+        }
+
+        public void Wyswietl()
+        {
+            Console.WriteLine(string.Format(" {0,-15}  {1,-15}  {2,-4}  {3,-15}  {4,-2}", 
+            "imie", "nazwisko", "wiek", "stanowisko", "plec"));
+
+            foreach(T a in baza)
+            {
+                Console.WriteLine(a.Show());
+            }
+        }
+
+        public bool Validate(T pracownik)
+        {
+            if (baza.Any(x => x.IsMatch(pracownik) == true)) 
+            {
+                Console.WriteLine("\nKrotka nie przeszla walidacji, powielenie:");
+                Console.WriteLine(pracownik.Show());
+                return false;
+            }
+            else return true;
+        }
+
+        public bool Save(IBuilder builder)
+        {
+            return builder.Save(baza.ToList<Pracownik>());
+        }
+
+        public bool Read(IBuilder builder)
+        {
+            var loaded = builder.Read;
+            return true;
+            
+        }
+    }
+    
+var kartoteka = new Kartoteka<Pracownik>();
+kartoteka.Dodaj(new Pracownik(){imie = "Mateusz", nazwisko = "Orlinski", wiek = 22, stanowisko = "Student", plec = "m"});
+kartoteka.Dodaj(new Pracownik(){imie = "Marcin", nazwisko = "Szymanski", wiek = 23, stanowisko = "Szef", plec = "m"});
+kartoteka.Dodaj(new Pracownik(){imie = "pan", nazwisko = "testowy", wiek = 23, stanowisko = "Szef", plec = "m"});
+
+kartoteka.Wyswietl();
+kartoteka.Szukaj("mateusz");
+
+Console.WriteLine("\nTest walidacji, proba dodania obiektu z zawartoscia identyczna do innego obiektu w bazie:");
+kartoteka.Dodaj(new Pracownik(){imie = "Marcin", nazwisko = "Szymanski", wiek = 23, stanowisko = "Szef", plec = "m"});
+
+var jsonbuilder = new JSONBuilder();
+kartoteka.Save(jsonbuilder);
+kartoteka.Read(jsonbuilder);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*3
+
+public class OnpExpression
+{
+    public string expression {get; set;}
+
+    public OnpExpression() {}
+
+    public OnpExpression(string c)
+    {
+        this.expression = c;
+    }
+
+    public static OnpExpression operator+ (OnpExpression x, OnpExpression y) 
+    {
+        OnpExpression onp = new OnpExpression();
+        onp.expression = $"{x.expression} {y.expression}+";
+        return onp;
+    }
+
+    public static OnpExpression operator- (OnpExpression x, OnpExpression y)
+    {
+        OnpExpression onp = new OnpExpression();
+        onp.expression = $"{x.expression} {y.expression}-";
+        return onp;
+    }
+    public static OnpExpression operator* (OnpExpression x, OnpExpression y)
+    {
+        OnpExpression onp = new OnpExpression();
+        onp.expression = $"{x.expression} {y.expression}*";
+        return onp;
+    }
+    
+    public static OnpExpression operator/ (OnpExpression x, OnpExpression y)
+    {
+        OnpExpression onp = new OnpExpression();
+        onp.expression = $"{x.expression} {y.expression}/";
+        return onp;
+    }
+
+    public override string ToString()
+    {
+        return expression;
+    }
+}
+
+OnpExpression a = new OnpExpression("a");
+OnpExpression b = new OnpExpression("b");
+OnpExpression c = new OnpExpression("c");
+
+var x = a - b * c;
+
+var y = new OnpExpression("a") - new OnpExpression("b") * new OnpExpression("c");
+
+Console.WriteLine(x.ToString());
+Console.WriteLine(y.ToString());
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*4
+
+public class Sum 
+{
+    private int[] array { get; set; }
+
+    public Sum(int[] value) 
+    {
+        this.array = value;
+    }
+    public static bool operator < (Sum x, Sum y)
+    {
+        return x.array.Sum() < y.array.Sum();
+    }
+
+    public static bool operator > (Sum x, Sum y)
+    {
+        return x.array.Sum() > y.array.Sum();
+    }
+}
+
+int[] c = {1, 2, 3, 4};
+int[] d = {20, 30};
+
+var a = new Sum(c);
+var b = new Sum(d);
+
+Console.WriteLine(a < b);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*5
+
+class Student
+{
+    public int index_id { get; set; }
+    public int age { get; set; }
+    public char gender { get; set; }
+    public int year_of_study { get; set; }
+    public int term { get; set; }
+}
+
+class Degree
+{
+    public int index_id { get; set; }
+    public string subject { get; set; }
+    public double mark { get; set; }
+    public int year_of_pass { get; set; }
+    public int term { get; set; }
+}
+
+var students =  new List<Student>()
+{
+    new Student() { index_id = 300000, age = 18, gender = 'm', year_of_study = 1, term = 1},
+    new Student() { index_id = 300001, age = 20, gender = 'w', year_of_study = 1, term = 1},
+
+    new Student() { index_id = 300002, age = 20, gender = 'm', year_of_study = 1, term = 2},
+    new Student() { index_id = 300003, age = 22, gender = 'w', year_of_study = 1, term = 2},
+
+    new Student() { index_id = 300004, age = 20, gender = 'm', year_of_study = 2, term = 3},
+    new Student() { index_id = 300005, age = 20, gender = 'w', year_of_study = 2, term = 3},
+
+    new Student() { index_id = 300006, age = 24, gender = 'm', year_of_study = 2, term = 4},
+    new Student() { index_id = 300007, age = 22, gender = 'm', year_of_study = 2, term = 4},
+
+    new Student() { index_id = 300008, age = 22, gender = 'm', year_of_study = 3, term = 5},
+    new Student() { index_id = 300009, age = 25, gender = 'm', year_of_study = 3, term = 5}
+};
+
+var degrees = new List<Degree>()
+{
+    new Degree() { index_id = 300000, subject = "WDI", mark = 4.5, year_of_pass = 1, term = 1},
+    new Degree() { index_id = 300000, subject = "Fizyka", mark = 4.0, year_of_pass = 1, term = 1},
+
+    new Degree() { index_id = 300001, subject = "AMzEA", mark = 3.5, year_of_pass = 1, term = 1},
+    new Degree() { index_id = 300001, subject = "LDI", mark = 5.0, year_of_pass = 1, term = 1},
+
+    new Degree() { index_id = 300002, subject = "GK", mark = 5.0, year_of_pass = 1, term = 2},
+    new Degree() { index_id = 300002, subject = "MN", mark = 3.0, year_of_pass = 1, term = 2},
+
+    new Degree() { index_id = 300003, subject = "BD", mark = 4.0, year_of_pass = 1, term = 2},
+    new Degree() { index_id = 300003, subject = "PTC", mark = 4.5, year_of_pass = 1, term = 2},
+
+    new Degree() { index_id = 300004, subject = "SWI", mark = 3.5, year_of_pass = 2, term = 3},
+    new Degree() { index_id = 300004, subject = "AISD", mark = 3.0, year_of_pass = 2, term = 3},
+
+    new Degree() { index_id = 300005, subject = "AK", mark = 4.5, year_of_pass = 2, term = 3},
+    new Degree() { index_id = 300005, subject = "RPiSM", mark = 3.5, year_of_pass = 2, term = 3},
+
+    new Degree() { index_id = 300006, subject = "SW", mark = 4.0, year_of_pass = 2, term = 4},
+    new Degree() { index_id = 300006, subject = "SE", mark = 4.0, year_of_pass = 2, term = 4},
+
+    new Degree() { index_id = 300007, subject = "PUS", mark = 5.0, year_of_pass = 2, term = 4},
+    new Degree() { index_id = 300007, subject = "NJPO", mark = 4.0, year_of_pass = 2, term = 4},
+
+    new Degree() { index_id = 300008, subject = "ZIIBD", mark = 4.5, year_of_pass = 3, term = 5},
+    new Degree() { index_id = 300008, subject = "ZMPO", mark = 4.0, year_of_pass = 3, term = 5},
+
+    new Degree() { index_id = 300009, subject = "PPSI", mark = 4.5, year_of_pass = 3, term = 5},
+    new Degree() { index_id = 300009, subject = "AMIW", mark = 4.0, year_of_pass = 3, term = 5}
+};
+
+var link_stud_degr = 
+	from stud in students
+    join degr in degrees on stud.index_id equals degr.index_id into student_degrees
+    select new
+    {
+        IndexId = stud.index_id,
+        Age = stud.age,
+        Gender = stud.gender,
+        YearOfStudy = stud.year_of_study,
+        Term = stud.term,
+        Degree = student_degrees
+    };
+
+var stud_age_big_than_avg = 
+    from stud in link_stud_degr
+    where stud.Age > students.Average(stud => stud.age)
+    select stud;
+
+foreach(var i in stud_age_big_than_avg)
+{
+    Console.WriteLine($"{i.IndexId}: {i.Age}");
+}
+
+var stud_avg_mark_bigger = 
+    from stud in link_stud_degr
+    group stud by stud.YearOfStudy into group_by_year_of_study
+    from student_in_year in group_by_year_of_study
+    where student_in_year.Degree.Average(mark => mark.mark) >= group_by_year_of_study.Average(stud => stud.Degree.Average(mark => mark.mark))
+    select student_in_year;
+
+foreach(var i in stud_avg_mark_bigger)
+{
+    Console.WriteLine("{0}: {1}", i.IndexId, i.Degree.Average(mark => mark.mark));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*6
+
+public interface Builder
+{
+    void BuildPart1();
+    void BuildPart2();
+    void BuildPart3();
+}
+
+public class FullBuilder : Builder
+{
+    private Product product = new Product();
+    
+    public FullBuilder()
+    {
+        this.Reset();
+    }
+    
+    public void Reset()
+    {
+        this.product = new Product();
+    }
+    
+    public void BuildPart1()
+    {
+        this.product.Add("Part1");
+    }
+    
+    public void BuildPart2()
+    {
+        this.product.Add("Part2");
+    }
+    
+    public void BuildPart3()
+    {
+        this.product.Add("Part3");
+    }
+    
+    public Product GetProduct()
+    {
+        Product result = this.product;
+        this.Reset();
+        return result;
+    }
+}
+
+public class Product
+{
+    private List<object> parts = new List<object>();
+
+    public void Add(string part)
+    {
+        this.parts.Add(part);
+    }
+    
+    public string ListParts()
+    {
+        string str = string.Empty;
+        for (int i = 0; i < this.parts.Count; i++)
+        {
+            str += this.parts[i] + ", ";
+        }
+        str = str.Remove(str.Length - 2);
+        return "Product parts: " + str + "\n";
+    }
+}
+
+public class Director
+{
+    private Builder builder;
+
+    public Builder Builder
+    {
+        set { builder = value; } 
+    }
+    
+    public void BuildMinimalProduct()
+    {
+        this.builder.BuildPart1();
+    }
+    
+    public void BuildFullProduct()
+    {
+        this.builder.BuildPart1();
+        this.builder.BuildPart2();
+        this.builder.BuildPart3();
+    }
+}
+
+var director = new Director();
+var builder = new FullBuilder();
+director.Builder = builder;
+
+Console.WriteLine("Basic product:");
+director.BuildMinimalProduct();
+Console.WriteLine(builder.GetProduct().ListParts());
+
+Console.WriteLine("Full product:");
+director.BuildFullProduct();
+Console.WriteLine(builder.GetProduct().ListParts());
+
+Console.WriteLine("Custom product:");
+builder.BuildPart2();
+builder.BuildPart3();
+Console.Write(builder.GetProduct().ListParts());
+
+
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
+public interface AbstractFactory
+{
+    AbstractProductA CreateProductA();
+    AbstractProductB CreateProductB();
+}
+
+class Factory1 : AbstractFactory
+{
+    public AbstractProductA CreateProductA()
+    {
+        return new ProductA1();
+    }
+
+    public AbstractProductB CreateProductB()
+    {
+        return new ProductB1();
+    }
+}
+
+class Factory2 : AbstractFactory
+{
+    public AbstractProductA CreateProductA()
+    {
+        return new ProductA2();
+    }
+
+    public AbstractProductB CreateProductB()
+    {
+        return new ProductB2();
+    }
+}
+
+public interface AbstractProductA
+{
+    string FunctionA();
+}
+
+class ProductA1 : AbstractProductA
+{
+    public string FunctionA()
+    {
+        return "Result of the product A1.";
+    }
+}
+
+class ProductA2 : AbstractProductA
+{
+    public string FunctionA()
+    {
+        return "Result of the product A2.";
+    }
+}
+
+public interface AbstractProductB
+{
+    string FunctionB();
+    string AnotherFunctionB(AbstractProductA collaborator);
+}
+
+class ProductB1 : AbstractProductB
+{
+    public string FunctionB()
+    {
+        return "Result of the product B1.";
+    }
+
+    public string AnotherFunctionB(AbstractProductA collaborator)
+    {
+        var result = collaborator.FunctionA();
+
+        return $"Result of the B1 collaborating with ({result})";
+    }
+}
+
+class ProductB2 : AbstractProductB
+{
+    public string FunctionB()
+    {
+        return "Result of the product B2.";
+    }
+
+    public string AnotherFunctionB(AbstractProductA collaborator)
+    {
+        var result = collaborator.FunctionA();
+
+        return $"Result of the B2 collaborating with ({result})";
+    }
+}
+
+public void ClientMethod(AbstractFactory factory)
+{
+    var productA = factory.CreateProductA();
+    var productB = factory.CreateProductB();
+
+    Console.WriteLine(productB.FunctionB());
+    Console.WriteLine(productB.AnotherFunctionB(productA));
+}
+
+Console.WriteLine("Testing code with the first factory type...");
+ClientMethod(new Factory1());
+Console.WriteLine();
+
+Console.WriteLine("Testing the same code with the second factory type...");
+ClientMethod(new Factory2());
+Console.WriteLine();
+
+// // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
+abstract class Iterator : IEnumerator
+{
+    object IEnumerator.Current => Current();
+    public abstract int Key();
+    public abstract object Current();
+    public abstract bool MoveNext();
+    public abstract void Reset();
+}
+
+abstract class IteratorA : IEnumerable
+{
+    public abstract IEnumerator GetEnumerator();
+}
+
+class Order : Iterator
+{
+    private Collection collection;
+    private int position = -1;
+    private bool reverse = false;
+
+    public Order(Collection collection, bool reverse = false)
+    {
+        this.collection = collection;
+        this.reverse = reverse;
+
+        if (reverse)
+        {
+            this.position = collection.getItems().Count;
+        }
+    }
+
+    public override int Key()
+    {
+        return this.position;
+    }
+
+    public override object Current()
+    {
+        return this.collection.getItems()[position];
+    }
+
+    public override bool MoveNext()
+    {
+        int updatedPosition = this.position + (this.reverse ? -1 : 1);
+
+        if (updatedPosition >= 0 && updatedPosition < this.collection.getItems().Count)
+        {
+            this.position = updatedPosition;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public override void Reset()
+    {
+        this.position = this.reverse ? this.collection.getItems().Count - 1 : 0;
+    }
+}
+
+class Collection : IteratorAggregate
+{
+    List<string> collection = new List<string>();
+    bool direction = false;
+
+    public List<string> getItems()
+    {
+        return collection;
+    }
+
+    public void AddItem(string item)
+    {
+        this.collection.Add(item);
+    }
+
+    public void ReverseDirection()
+    {
+        direction = !direction;
+    }
+
+    public override IEnumerator GetEnumerator()
+    {
+        return new Order(this, direction);
+    }
+}
+
+var collection = new Collection();
+collection.AddItem("A");
+collection.AddItem("B");
+collection.AddItem("C");
+collection.AddItem("D");
+
+foreach (var element in collection)
+{
+    Console.WriteLine(element);
+}
+
+Console.WriteLine();
+collection.ReverseDirection();
+
+foreach (var element in collection)
+{
+    Console.WriteLine(element);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*7
+
+class SortedList
+{
+    private Strategy strategy;
+    private List<String> list = new List<String>();
+    public SortedList() {}
+
+    public SortedList(Strategy strategy)
+    {
+        this.strategy = strategy;
+    }
+
+    public void SetSortStrategy(Strategy strategy)
+    {
+        this.strategy = strategy;
+    }
+
+    public void Sort()
+    {
+        list = strategy.DoAlgorithm(list);
+        Console.Write("\n{0}: ", strategy.GetType().Name);
+        list.ForEach(item => Console.Write("{0}, ", item));
+
+    }
+    public void Add(String value)
+    {
+        list.Add(value);
+    }
+
+}
+
+public interface Strategy
+{
+    List<String> DoAlgorithm(List<String> data);
+}
+
+class QuickSort : Strategy
+{
+    public List<String> DoAlgorithm(List<String> a)
+    {
+        if (a.Count()<2)
+        {
+            return a;
+        }
+        else
+        {
+            string pivot = a[a.Count()/2];
+            List<string> less = new List<string>();
+            List<string> greater = new List<string>();
+            foreach (string item in a)
+            {
+                for (int i=0; i<item.Count(); i++)
+                {
+                    if (item[i]>pivot[i])
+                    {
+                        greater.Add(item);
+                        break;
+                    }
+                    if (item[i]<pivot[i])
+                    {
+                        less.Add(item);
+                        break;
+                    }
+                }
+            }
+            List<string> temp = new List<string>();
+            temp.AddRange(DoAlgorithm(less));
+            temp.Add(pivot);
+            temp.AddRange(DoAlgorithm(greater));
+            return temp;
+        }
+    }
+}
+
+class ShellSort : Strategy
+{
+    public List<String> DoAlgorithm(List<String> a)
+    {
+        if (a.Count()<2)
+        {
+            return a;
+        }
+        else
+        {
+            for (int interval = a.Count()/2; interval>0; interval/=2)
+            {
+                for (int i=interval; i<a.Count(); i++)
+                {
+                    var temp=a[i];
+                    int j;
+                    for (j=i; j>=interval && a[j-interval][0]>temp[0]; j-=interval)
+                    {
+                        a[j]=a[j-interval];
+                    }
+                    a[j]=temp;
+                }
+            }
+            return a;
+        }
+    }
+}
+
+class MergeSort : Strategy
+{
+    public List<String> DoAlgorithm(List<String> a)
+    {
+        if (a.Count()<2)
+    {
+        return a;
+    }
+    else
+    {
+        int mid = a.Count()/2;
+        List<string> l = new List<string>();
+        List<string> r = new List<string>();
+
+        for (int i=0; i<a.Count(); i++)
+        {
+            if (i<mid)
+            {
+                l.Add(a[i]);
+            }
+            if (i>=mid)
+            {
+                r.Add(a[i]);
+            }
+        }
+        merge(a, DoAlgorithm(l), DoAlgorithm(r), mid, a.Count()-mid);
+        return a;
+    }
+    }
+
+    public void merge(List<string> a, List<string> l, List<string> r, int left, int right)
+    {   
+        int i=0, j=0, k=0;
+        while (i<left && j<right)
+        {
+            if (l[i][0]<=r[j][0])
+            {
+                a[k++]=l[i++];
+            }
+            else
+            {
+                a[k++]=r[j++];
+            }
+        }
+        while (i<left)
+        {
+            a[k++] = l[i++];
+        }
+        while (j<right)
+        {
+            a[k++] = r[j++];
+        }
+    }
+}
+
+
+SortedList studentRecords = new SortedList();
+
+studentRecords.Add("Samual");
+studentRecords.Add("Jimmy");
+studentRecords.Add("Sandra");
+studentRecords.Add("Vivek");
+studentRecords.Add("Anna");
+
+studentRecords.SetSortStrategy(new QuickSort());
+studentRecords.Sort();
+
+studentRecords.SetSortStrategy(new ShellSort());
+studentRecords.Sort();
+
+studentRecords.SetSortStrategy(new MergeSort());
+studentRecords.Sort();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+*8
+
+public interface Observer
+{
+    void Update(ISubject subject);
+}
+
+public interface ISubject
+{
+    void Attach(Observer observer);
+    void Detach(Observer observer);
+    void Notify();
+}
+
+public class Subject : ISubject
+{
+    public int state { get; set; } = 0;
+    private List<Observer> observers = new List<Observer>();
+
+    public void Attach(Observer observer)
+    {
+        Console.WriteLine("Subject: Attached {0}", observer.GetType().Name);
+        this.observers.Add(observer);
+    }
+
+    public void Detach(Observer observer)
+    {
+        Console.WriteLine("Subject: Detached {0}", observer.GetType().Name);
+        this.observers.Remove(observer);
+    }
+
+    public void Notify()
+    {
+        foreach (var observer in observers)
+        {
+            observer.Update(this);
+        }
+    }
+}
+
+class ObserverA : Observer
+{
+    public void Update(ISubject subject)
+    {
+        if ((subject as Subject).state <= 3)
+        {
+            Console.WriteLine("ObserverA: Reacted to event");
+        }
+        else
+        {
+            Console.WriteLine("ObserverA: Not reacted to event");
+        }
+    }
+}
+
+class ObserverB : Observer
+{
+    public void Update(ISubject subject)
+    {
+        if ((subject as Subject).state > 3)
+        {
+            Console.WriteLine("ObserverB: Reacted to event");
+        }
+        else
+        {
+            Console.WriteLine("ObserverB: Not reacted to event");
+        }
+    }
+}
+
+var subject = new Subject();
+var obsA = new ObserverA();
+var obsB = new ObserverB();
+
+subject.Attach(obsA);
+subject.Attach(obsB);
+Console.WriteLine();
+
+subject.state = 1;
+subject.Notify();
+Console.WriteLine();
+
+subject.state = 5;
+subject.Notify();
+Console.WriteLine();
+
+subject.Detach(obsB);
+Console.WriteLine();
+
+subject.state = 3;
+subject.Notify();
+Console.WriteLine();
+
+subject.Detach(obsA);
+Console.WriteLine();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
