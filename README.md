@@ -1,6 +1,6 @@
 # Csharp-NJPO2
 
-Nowoczesne języki programowania obiektowego 2
+modern object-oriented programming languages 2
 
 Here is some code that I needed to prepare during my IT studies at Univeristy of Silesia.
 Below description to every exercise.
